@@ -7,9 +7,9 @@ async fn main() {
     let data_base_address = get_configuration()
         .expect("failed to find or parse config")
         .database
-        .connection_string();
+        .without_db();
 
-    let pool = PgPool::connect(&data_base_address.expose_secret())
+    let pool = PgPool::connect_with(data_base_address)
         .await
         .expect("Failed to connect to Postgres");
 

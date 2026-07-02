@@ -1,5 +1,8 @@
 use config::File;
 use secrecy::{ExposeSecret, SecretString};
+// We need this function for getting data
+use serde_aux::field_attributes::deserialize_number_from_string;
+use sqlx::postgres::PgConnectOptions;
 
 #[derive(serde::Deserialize)]
 pub struct Settings {
@@ -13,28 +16,45 @@ pub struct Settings {
 pub struct DatabaseSettings {
     pub username: String,
     pub password: SecretString,
+    // use a custom function deserialize
+    // allows it to be deserialized from a string or a raw number
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
     pub database_name: String,
 }
 
 impl DatabaseSettings {
-    pub fn connection_string(&self) -> SecretString {
-        format!(
-            "postgres://{}:{}@{}:{}/{}",
-            self.username,
-            self.password.expose_secret(),
-            self.host,
-            self.port,
-            self.database_name
-        )
-        .into()
+    // pub fn connection_string(&self) -> SecretString {
+    //     format!(
+    //         "postgres://{}:{}@{}:{}/{}",
+    //         self.username,
+    //         self.password.expose_secret(),
+    //         self.host,
+    //         self.port,
+    //         self.database_name
+    //     )
+    //     .into()
+    // }
+
+    pub fn without_db(&self) -> PgConnectOptions {
+        PgConnectOptions::new()
+            .host(&self.host)
+            .username(&self.username)
+            .password(&self.password.expose_secret())
+            .port(self.port)
+    }
+
+    pub fn with_db(&self) -> PgConnectOptions {
+        self.without_db().database(&self.database_name)
     }
 }
 
 // NOTE: added for docker connections to host machines
+// NOTE: added serde to deserialize our input
 #[derive(serde::Deserialize)]
 pub struct ApplicationSettings {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
 }
@@ -69,6 +89,12 @@ impl TryFrom<String> for Envireonment {
 
 // NOTE: we've had to change this function
 // so that it can check if we're in local or production
+// NOTE: currently our data base details are stored in our
+// config.yaml file, we dont want this to be the case during
+// production
+// [-]
+// We want a way of injecting envireonment variables to inject
+// secrets at runtime
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let base_path = std::env::current_dir()
         .expect("Failed to determine current Directory");

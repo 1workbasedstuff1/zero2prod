@@ -27,11 +27,10 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
     };
 
     // forms connectoin to PostGres
-    let mut connection = PgConnection::connect(
-        &maintenance_settings.connection_string().expose_secret(),
-    )
-    .await
-    .expect("Failed to connect to Postgres");
+    let mut connection =
+        PgConnection::connect_with(&maintenance_settings.with_db())
+            .await
+            .expect("Failed to connect to Postgres");
 
     // EXPLAIN: we have to wrap string in AssertSqlSafe for security reasons
     // designed to prevent injection attacks
@@ -46,10 +45,9 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
         .expect("Failed to create database.");
 
     // Migrate database
-    let connection_pool =
-        PgPool::connect(&config.connection_string().expose_secret())
-            .await
-            .expect("Failed to connect to Postgres.");
+    let connection_pool = PgPool::connect_with(config.with_db())
+        .await
+        .expect("Failed to connect to Postgres.");
     sqlx::migrate!("./migrations")
         .run(&connection_pool)
         .await

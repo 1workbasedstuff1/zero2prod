@@ -22,11 +22,9 @@ async fn main() -> std::io::Result<()> {
     // need connection url
     let connection_pool = PgPoolOptions::new()
         .acquire_timeout(Duration::from_secs(2))
-        .connect_lazy(
-            &configuration.database.connection_string().expose_secret(),
-        )
-        // .await
-        .expect("Failed to connect to Postgres");
+        .connect_lazy_with(configuration.database.with_db());
+    // .await
+    // .expect("Failed to connect to Postgres");
 
     // NOTE: changes this for docker local and production flags
     let address = format!(
