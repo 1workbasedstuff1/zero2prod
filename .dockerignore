@@ -16,6 +16,7 @@ migrations/
 
 # all bin
 bin/
+.gitignore/
 
 # our formatter
 rustfmt.toml
