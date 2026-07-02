@@ -1,0 +1,21 @@
+# Rust build artifacts
+target/
+
+# exclude tests from the image
+tests/
+
+.git/
+.gitignore/
+Dockerfile
+scripts/
+
+.env/
+
+# exclude this as its not needed
+migrations/
+
+# all bin
+bin/
+
+# our formatter
+rustfmt.toml

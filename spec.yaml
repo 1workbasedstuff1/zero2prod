@@ -1,0 +1,33 @@
+#! spec.yaml
+name: zero2prod
+# 'lon' stands for london
+region: lon
+services:
+  - name: zero2prod
+    # relative to repository root
+    dockerfile_path: Dockerfile
+    source_dir: .
+    github:
+      # deploy an when you created the repository
+      # default branch on Github may be name 'master'
+      branch: main
+      # Deploy a new version on every commit to 'main'
+      # Continous Development
+      deploy_on_push: true
+      # our personal details
+      repo: 1workbasedstuff1/zero2prod
+    # active probe used by digital ocean to ensure that
+    # application is healthy
+    health_check:
+      # path to health check end point
+      http_path: /health_check
+    # port the application will be listening on for incoming requests
+    # It should match the one specified in the configuration/production.yaml file
+    http_port: 8000
+    # for production workloads we should have at least 2
+    # But to keep bill low we go for one
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    # All incoming requests should be routed to out app
+    routes:
+      - path: /
