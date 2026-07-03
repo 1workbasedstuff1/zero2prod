@@ -1,5 +1,5 @@
 # use cargo-chef for build caching
-FROM lukemathwalker/cargo-chef:latest-rust-1.96.0 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.96.0-bookworm AS chef
 WORKDIR /app
 RUN apt update && apt install lld clang -y
 
