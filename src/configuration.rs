@@ -2,7 +2,11 @@ use config::File;
 use secrecy::{ExposeSecret, SecretString};
 // We need this function for getting data
 use serde_aux::field_attributes::deserialize_number_from_string;
-use sqlx::postgres::PgConnectOptions;
+use sqlx::{
+    ConnectOptions,
+    postgres::{PgConnectOptions, PgSslMode},
+};
+use tracing;
 
 #[derive(serde::Deserialize)]
 pub struct Settings {
@@ -22,6 +26,7 @@ pub struct DatabaseSettings {
     pub port: u16,
     pub host: String,
     pub database_name: String,
+    pub require_ssl: bool,
 }
 
 impl DatabaseSettings {
@@ -38,6 +43,13 @@ impl DatabaseSettings {
     // }
 
     pub fn without_db(&self) -> PgConnectOptions {
+        // needed for encrypted communications
+        let ssl_mode = if self.require_ssl {
+            PgSslMode::Require
+        } else {
+            PgSslMode::Prefer
+        };
+
         PgConnectOptions::new()
             .host(&self.host)
             .username(&self.username)
@@ -46,7 +58,9 @@ impl DatabaseSettings {
     }
 
     pub fn with_db(&self) -> PgConnectOptions {
-        self.without_db().database(&self.database_name)
+        self.without_db()
+            .database(&self.database_name)
+            .log_statements(tracing::log::LevelFilter::Trace)
     }
 }
 
@@ -121,6 +135,9 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
                 configuration_directory.join(envireonment.as_str()),
             )
             .required(true),
+        )
+        .add_source(
+            config::Environment::with_prefix("APP").separator("__"),
         )
         .build()?;
 

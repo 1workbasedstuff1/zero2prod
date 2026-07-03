@@ -17,25 +17,11 @@ pub struct TestApp {
 }
 
 pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
-    // create database
-    let maintenance_settings = DatabaseSettings {
-        database_name: "postgres".to_string(),
-        username: "postgres".to_string(),
-        password: "password".to_string().into(),
-        port: config.port,
-        host: config.host.clone(),
-    };
-
     // forms connectoin to PostGres
-    let mut connection =
-        PgConnection::connect_with(&maintenance_settings.with_db())
-            .await
-            .expect("Failed to connect to Postgres");
+    let mut connection = PgConnection::connect_with(&config.without_db())
+        .await
+        .expect("Failed to connect to Postgres");
 
-    // EXPLAIN: we have to wrap string in AssertSqlSafe for security reasons
-    // designed to prevent injection attacks
-    // [-]
-    // then we tell Postgres to make a new data base
     connection
         .execute(sqlx::AssertSqlSafe(format!(
             r#"CREATE DATABASE "{}";"#,
