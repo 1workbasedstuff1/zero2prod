@@ -1,75 +1,56 @@
 name: zero2prod
 region: lon
 features:
-- buildpack-stack=ubuntu-22
-
-jobs:
-- name: migrate
-  dockerfile_path: Dockerfile
-  github:
-    branch: main
-    deploy_on_push: false
-    repo: 1workbasedstuff1/zero2prod
-  source_dir: .
-  kind: PRE_DEPLOY
-  run_command: sqlx migrate run
-  instance_size_slug: basic-xxs
-  instance_count: 1
-  envs:
-  - key: APP_DATABASE__HOST
-    scope: RUN_TIME
-    value: "your-db-host.db.ondigitalocean.com"
-  - key: APP_DATABASE__PORT
-    scope: RUN_TIME
-    value: "25060"
-  - key: APP_DATABASE__USERNAME
-    scope: RUN_TIME
-    value: "doadmin"
-  - key: APP_DATABASE__PASSWORD
-    scope: RUN_TIME
-  - key: APP_DATABASE__DATABASE_NAME
-    scope: RUN_TIME
-    value: "newsletter"
-  - key: APP_DATABASE__REQUIRE_SSL
-    scope: RUN_TIME
-    value: "true"
-
-ingress:
-  rules:
-  - component:
-      name: zero2prod
-    match:
-      path:
-        prefix: /
+  - buildpack-stack=ubuntu-22
 
 services:
-- dockerfile_path: Dockerfile
-  github:
-    branch: main
-    deploy_on_push: true
-    repo: 1workbasedstuff1/zero2prod
-  health_check:
-    http_path: /health_check
-  http_port: 8000
-  instance_count: 1
-  instance_size_slug: basic-xxs
-  name: zero2prod
-  source_dir: .
-  envs:
-  - key: APP_DATABASE__HOST
-    scope: RUN_TIME
-    value: "your-db-host.db.ondigitalocean.com"
-  - key: APP_DATABASE__PORT
-    scope: RUN_TIME
-    value: "25060"
-  - key: APP_DATABASE__USERNAME
-    scope: RUN_TIME
-    value: "doadmin"
-  - key: APP_DATABASE__PASSWORD
-    scope: RUN_TIME
-  - key: APP_DATABASE__DATABASE_NAME
-    scope: RUN_TIME
-    value: "newsletter"
-  - key: APP_DATABASE__REQUIRE_SSL
-    scope: RUN_TIME
-    value: "true"
+  - name: zero2prod
+    dockerfile_path: Dockerfile
+    source_dir: .
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: 1workbasedstuff1/zero2prod
+    health_check:
+      http_path: /health_check
+    http_port: 8000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /
+    envs:
+      - key: APP_APPLICATION__BASE_URL
+        scope: RUN_TIME
+        value: ${APP_URL}
+      - key: APP_DATABASE__USERNAME
+        scope: RUN_TIME
+        value: doadmin
+      - key: APP_DATABASE__PASSWORD
+        scope: RUN_TIME
+        type: SECRET
+        value: EV[1:...]     # set this via `doctl` or the dashboard, don't commit it in plaintext
+      - key: APP_DATABASE__HOST
+        scope: RUN_TIME
+        value: db-pgsql-lon1-56235-do-user-39618273-0.d.db.ondigitalocean.com
+      - key: APP_DATABASE__PORT
+        scope: RUN_TIME
+        value: "25060"
+      - key: APP_DATABASE__DATABASE_NAME
+        scope: RUN_TIME
+        value: defaultdb
+      - key: APP_DATABASE__REQUIRE_SSL
+        scope: RUN_TIME
+        value: "true"
+
+jobs:
+  - name: migrate
+    dockerfile_path: Dockerfile
+    github:
+      branch: main
+      deploy_on_push: false
+      repo: 1workbasedstuff1/zero2prod
+    source_dir: .
+    kind: PRE_DEPLOY
+    run_command: sqlx migrate run
+    instance_size_slug: basic-xxs
+    instance_count: 1
