@@ -27,8 +27,6 @@ jobs:
     value: "doadmin"
   - key: APP_DATABASE__PASSWORD
     scope: RUN_TIME
-    type: SECRET
-    value: "your-password"
   - key: APP_DATABASE__DATABASE_NAME
     scope: RUN_TIME
     value: "newsletter"
@@ -69,8 +67,6 @@ services:
     value: "doadmin"
   - key: APP_DATABASE__PASSWORD
     scope: RUN_TIME
-    type: SECRET
-    value: "your-password"
   - key: APP_DATABASE__DATABASE_NAME
     scope: RUN_TIME
     value: "newsletter"
