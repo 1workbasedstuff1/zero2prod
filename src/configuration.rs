@@ -8,15 +8,18 @@ use sqlx::{
 };
 use tracing;
 
-#[derive(serde::Deserialize)]
+use crate::domain::SubscriberEmail;
+
+#[derive(serde::Deserialize, Clone)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
+    pub email_client: EmailClientSettings,
 }
 
 // note we had to remove the clone trait
 // because SecretBox doesnt implement it
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Clone)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: SecretString,
@@ -30,18 +33,6 @@ pub struct DatabaseSettings {
 }
 
 impl DatabaseSettings {
-    // pub fn connection_string(&self) -> SecretString {
-    //     format!(
-    //         "postgres://{}:{}@{}:{}/{}",
-    //         self.username,
-    //         self.password.expose_secret(),
-    //         self.host,
-    //         self.port,
-    //         self.database_name
-    //     )
-    //     .into()
-    // }
-
     pub fn without_db(&self) -> PgConnectOptions {
         // needed for encrypted communications
         let ssl_mode = if self.require_ssl {
@@ -67,7 +58,7 @@ impl DatabaseSettings {
 
 // NOTE: added for docker connections to host machines
 // NOTE: added serde to deserialize our input
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Clone)]
 pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
@@ -145,4 +136,22 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     // try_into -> try_deserialize with newer version of
     // config crate
     settings.try_deserialize()
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct EmailClientSettings {
+    pub base_url: String,
+    pub sender_email: String,
+    pub authorization_token: SecretString,
+    pub timeout_milliseconds: u64,
+}
+
+impl EmailClientSettings {
+    pub fn sender(&self) -> Result<SubscriberEmail, String> {
+        SubscriberEmail::try_from(self.sender_email.clone())
+    }
+
+    pub fn timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(self.timeout_milliseconds)
+    }
 }
